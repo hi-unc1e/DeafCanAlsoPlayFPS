@@ -31,6 +31,7 @@ namespace DeafAlsoPlayFps.Views
             // 订阅ViewModel的更新事件
             _viewModel.LevelsUpdated += OnLevelsUpdated;
             _viewModel.DisplayModeChanged += OnDisplayModeChanged;
+            _viewModel.DirectionSettingsChanged += OnDirectionSettingsChanged;
 
             Loaded += AudioVisualizerWindow_Loaded;
             Closing += AudioVisualizerWindow_Closing;
@@ -133,6 +134,11 @@ namespace DeafAlsoPlayFps.Views
             }
         }
 
+        private void OnDirectionSettingsChanged(bool enabled, double sideThresholdDb)
+        {
+            _channelDifferenceWindow?.ApplyDirectionSettings(enabled, sideThresholdDb);
+        }
+
         private void AudioVisualizerWindow_Loaded(object sender, RoutedEventArgs e)
         {
             try
@@ -167,6 +173,7 @@ namespace DeafAlsoPlayFps.Views
                 {
                     _viewModel.LevelsUpdated -= OnLevelsUpdated;
                     _viewModel.DisplayModeChanged -= OnDisplayModeChanged;
+                    _viewModel.DirectionSettingsChanged -= OnDirectionSettingsChanged;
                     _viewModel.Dispose();
                 }
 

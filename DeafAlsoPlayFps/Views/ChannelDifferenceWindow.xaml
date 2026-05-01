@@ -12,6 +12,9 @@
     Topmost="True"
     WindowStartupLocation="Manual"
     WindowStyle="None">
+    <Window.Resources>
+        <BooleanToVisibilityConverter x:Key="BooleanToVisibilityConverter" />
+    </Window.Resources>
 
     <Grid>
         <!--  主容器  -->
@@ -148,7 +151,8 @@
                     Grid.Row="2"
                     Margin="0,6,0,0"
                     HorizontalAlignment="Center"
-                    VerticalAlignment="Center">
+                    VerticalAlignment="Center"
+                    Visibility="{Binding DirectionRingEnabled, Converter={StaticResource BooleanToVisibilityConverter}}">
                     <Viewbox Width="82" Height="82">
                         <Grid Width="100" Height="100">
                             <Grid.Resources>

@@ -22,3 +22,9 @@ Bridges the accessibility gap in gaming by translating essential audio informati
 ### Need Help
 
 We need a free icon or logo
+
+### Attribution
+
+Original project: RightFS.
+
+Optimization and accessibility direction-indicator enhancements: unc1e.

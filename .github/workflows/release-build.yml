@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - codex/improve-direction-visuals
+    tags:
+      - "1.0.0"
   workflow_dispatch:
 
 permissions:
@@ -33,7 +35,7 @@ jobs:
         shell: pwsh
         run: |
           $ErrorActionPreference = "Stop"
-          $publishRoot = Join-Path $env:RUNNER_TEMP "DeafAlsoPlayFps-beta"
+          $publishRoot = Join-Path $env:RUNNER_TEMP "DeafAlsoPlayFps"
           $source = "DeafAlsoPlayFps/bin/Release/net480"
           if (-not (Test-Path $source)) {
             $source = "DeafAlsoPlayFps/bin/Release"
@@ -43,21 +45,21 @@ jobs:
           }
           New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
           Copy-Item -Path "$source/*" -Destination $publishRoot -Recurse -Force
-          Compress-Archive -Path "$publishRoot/*" -DestinationPath "DeafAlsoPlayFps-beta.zip" -Force
+          Compress-Archive -Path "$publishRoot/*" -DestinationPath "DeafAlsoPlayFps.zip" -Force
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
         with:
-          name: DeafAlsoPlayFps-beta
-          path: DeafAlsoPlayFps-beta.zip
+          name: DeafAlsoPlayFps
+          path: DeafAlsoPlayFps.zip
 
-      - name: Create prerelease
+      - name: Create release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: beta-${{ github.run_number }}
-          name: DeafAlsoPlayFps beta ${{ github.run_number }}
+          tag_name: ${{ startsWith(github.ref, 'refs/tags/') && github.ref_name || format('beta-{0}', github.run_number) }}
+          name: ${{ startsWith(github.ref, 'refs/tags/') && format('DeafAlsoPlayFps {0}', github.ref_name) || format('DeafAlsoPlayFps beta {0}', github.run_number) }}
           body: |
-            Beta build from branch `${{ github.ref_name }}`.
+            Build from ref `${{ github.ref_name }}`.
             Commit: `${{ github.sha }}`.
-          prerelease: true
-          files: DeafAlsoPlayFps-beta.zip
+          prerelease: ${{ !startsWith(github.ref, 'refs/tags/') }}
+          files: DeafAlsoPlayFps.zip

@@ -23,8 +23,10 @@ namespace DeafAlsoPlayFps.ViewModel
         private AudioVisualizerWindow? _audioVisualizerWindow;
 
         private bool _isAudioVisualizerVisible = false;
+        private bool _isLoadingSettings;
         public MainViewModel()
         {
+            LoadSettings();
             _dispatcher = Dispatcher.CurrentDispatcher;
             _audioCaptureService = new AudioCaptureService();
             _audioCaptureService.AudioLevelChanged += OnAudioLevelChanged;
@@ -44,6 +46,12 @@ namespace DeafAlsoPlayFps.ViewModel
         private double _gainBoost = 1;
 
         [ObservableProperty]
+        private bool _directionRingEnabled = true;
+
+        [ObservableProperty]
+        private double _directionSideThresholdDb = 15.0;
+
+        [ObservableProperty]
         private int _selectedDisplayIndex;
 
         [ObservableProperty]
@@ -53,6 +61,7 @@ namespace DeafAlsoPlayFps.ViewModel
             DisplayMode displayMode = (DisplayMode)value;
 
             SyncParametersToVisualizerWindow();
+            SaveAudioSettings();
         }
         // 当参数变化时，更新AudioVisualizerViewModel
         partial void OnAudioSensitivityChanged(double value)
@@ -61,6 +70,7 @@ namespace DeafAlsoPlayFps.ViewModel
             {
                 vm.Sensitivity = value;
             }
+            SaveAudioSettings();
         }
 
         partial void OnChannelSeparationChanged(double value)
@@ -69,6 +79,7 @@ namespace DeafAlsoPlayFps.ViewModel
             {
                 vm.ChannelSeparation = value;
             }
+            SaveAudioSettings();
         }
 
         partial void OnGainBoostChanged(double value)
@@ -77,6 +88,25 @@ namespace DeafAlsoPlayFps.ViewModel
             {
                 vm.GainBoost = value;
             }
+            SaveAudioSettings();
+        }
+
+        partial void OnDirectionRingEnabledChanged(bool value)
+        {
+            if (_audioVisualizerWindow?.DataContext is AudioVisualizerViewModel vm)
+            {
+                vm.DirectionRingEnabled = value;
+            }
+            SaveAudioSettings();
+        }
+
+        partial void OnDirectionSideThresholdDbChanged(double value)
+        {
+            if (_audioVisualizerWindow?.DataContext is AudioVisualizerViewModel vm)
+            {
+                vm.DirectionSideThresholdDb = value;
+            }
+            SaveAudioSettings();
         }
 
         // 当 SwitchOn 属性改变时触发的方法
@@ -161,7 +191,9 @@ namespace DeafAlsoPlayFps.ViewModel
                 vm.ChannelSeparation = ChannelSeparation;
                 vm.GainBoost = GainBoost;
                 vm.DisplayMode = (DisplayMode)SelectedDisplayIndex;
-                _logger.Info($"参数已同步到可视化窗口: 灵敏度={AudioSensitivity:F2}, 分离度={ChannelSeparation:F2}, 增益={GainBoost:F2}");
+                vm.DirectionRingEnabled = DirectionRingEnabled;
+                vm.DirectionSideThresholdDb = DirectionSideThresholdDb;
+                _logger.Info($"参数已同步到可视化窗口: 灵敏度={AudioSensitivity:F2}, 分离度={ChannelSeparation:F2}, 增益={GainBoost:F2}, 方向圆环={DirectionRingEnabled}, 纯左右阈值={DirectionSideThresholdDb:F1}dB");
             }
             else
             {
@@ -205,6 +237,47 @@ namespace DeafAlsoPlayFps.ViewModel
 
         [ObservableProperty]
         private bool _isLossModeShuffle;
+
+        private void LoadSettings()
+        {
+            _isLoadingSettings = true;
+            try
+            {
+                var settings = SettingsHelper.Instance?.Settings;
+                if (settings == null)
+                {
+                    return;
+                }
+
+                _switchOn = settings.MainSwitch;
+                _audioSensitivity = settings.AudioSensitivity;
+                _channelSeparation = settings.ChannelSeparation;
+                _gainBoost = settings.GainBoost;
+                _directionRingEnabled = settings.DirectionRingEnabled;
+                _directionSideThresholdDb = Math.Max(10.0, Math.Min(24.0, settings.DirectionSideThresholdDb));
+                _selectedDisplayIndex = (int)settings.DisplayMode;
+            }
+            finally
+            {
+                _isLoadingSettings = false;
+            }
+        }
+
+        private void SaveAudioSettings()
+        {
+            if (_isLoadingSettings || SettingsHelper.Instance?.Settings == null)
+            {
+                return;
+            }
+
+            SettingsHelper.Instance.Settings.AudioSensitivity = AudioSensitivity;
+            SettingsHelper.Instance.Settings.ChannelSeparation = ChannelSeparation;
+            SettingsHelper.Instance.Settings.GainBoost = GainBoost;
+            SettingsHelper.Instance.Settings.DirectionRingEnabled = DirectionRingEnabled;
+            SettingsHelper.Instance.Settings.DirectionSideThresholdDb = DirectionSideThresholdDb;
+            SettingsHelper.Instance.Settings.DisplayMode = (DisplayMode)SelectedDisplayIndex;
+            SettingsHelper.Instance.SaveSettings();
+        }
 
         public void Dispose()
         {

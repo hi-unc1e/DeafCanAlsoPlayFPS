@@ -8,7 +8,7 @@
     xmlns:octopusControls="clr-namespace:OctopusControls;assembly=OctopusControls"
     Title="声音方向显示"
     Width="600"
-    Height="450"
+    Height="520"
     AllowsTransparency="True"
     Background="Transparent"
     FontFamily="MiSans VF"
@@ -591,8 +591,10 @@
                             </StackPanel>
 
                         </Border>
-                        <Grid Height="300" Margin="32,24,32,0">
+                        <Grid Height="380" Margin="32,24,32,0">
                             <Grid.RowDefinitions>
+                                <RowDefinition Height="*" />
+                                <RowDefinition Height="*" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="*" />
                                 <RowDefinition Height="*" />
@@ -651,6 +653,22 @@
                                 FontSize="16"
                                 Foreground="#B2FFFFFF">
                                 响应灵敏度 Response Sensitivity
+                            </TextBlock>
+                            <TextBlock
+                                Grid.Row="6"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                Foreground="#B2FFFFFF">
+                                方向圆环 Direction Ring
+                            </TextBlock>
+                            <TextBlock
+                                Grid.Row="7"
+                                Grid.Column="0"
+                                VerticalAlignment="Center"
+                                FontSize="16"
+                                Foreground="#B2FFFFFF">
+                                纯左右阈值 Side Threshold
                             </TextBlock>
                             <ComboBox
                                 x:Name="DisplaySelector"
@@ -799,6 +817,27 @@
                                 Style="{StaticResource DarkSliderStyle}"
                                 TickFrequency="0.1"
                                 Value="{Binding AudioSensitivity, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
+                            <CheckBox
+                                Grid.Row="6"
+                                Grid.Column="1"
+                                Margin="20,0,0,0"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Center"
+                                Content=""
+                                Focusable="False"
+                                IsChecked="{Binding DirectionRingEnabled, Mode=TwoWay}"
+                                Style="{DynamicResource CheckBoxStyle1}" />
+                            <Slider
+                                Name="DirectionSideThresholdSlider"
+                                Grid.Row="7"
+                                Grid.Column="1"
+                                Width="240"
+                                IsSnapToTickEnabled="True"
+                                Maximum="24.0"
+                                Minimum="10.0"
+                                Style="{StaticResource DarkSliderStyle}"
+                                TickFrequency="1.0"
+                                Value="{Binding DirectionSideThresholdDb, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}" />
                         </Grid>
                     </StackPanel>
                 </Grid>

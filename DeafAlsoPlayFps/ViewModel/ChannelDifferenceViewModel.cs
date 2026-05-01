@@ -28,6 +28,12 @@ namespace DeafAlsoPlayFps.ViewModel
         private string _directionText = "等待声音";
 
         [ObservableProperty]
+        private bool _directionRingEnabled = true;
+
+        [ObservableProperty]
+        private double _sideThresholdDb = 15.0;
+
+        [ObservableProperty]
         private double _frontDirectionOpacity = 0;
 
         [ObservableProperty]
@@ -129,8 +135,7 @@ namespace DeafAlsoPlayFps.ViewModel
         private void UpdateDirectionCue(float leftLevel, float rightLevel)
         {
             const double idleOpacity = 0;
-            const double centerBand = 0.16;
-            const double sideBand = 0.82;
+            const double centerThresholdDb = 3.0;
             const double audibleThreshold = 0.015;
 
             _targetFrontDirectionOpacity = idleOpacity;
@@ -150,13 +155,16 @@ namespace DeafAlsoPlayFps.ViewModel
                 return;
             }
 
-            var sum = Math.Max(leftLevel + rightLevel, audibleThreshold);
-            var pan = Math.Max(-1.0, Math.Min(1.0, (rightLevel - leftLevel) / sum));
+            var left = Math.Max(leftLevel, audibleThreshold);
+            var right = Math.Max(rightLevel, audibleThreshold);
+            var levelDiffDb = 20.0 * Math.Log10(right / left);
+            var absDiffDb = Math.Abs(levelDiffDb);
+            var sideThresholdDb = Math.Max(centerThresholdDb + 1.0, SideThresholdDb);
             var activeOpacity = 0.55 + Math.Min(1.0, totalLevel * 1.8) * 0.35;
             var isFrontCue = IsFrontCue(totalLevel);
 
-            // 纯左/纯右阈值提高，避免左上/左下过早被归入左侧。
-            if (Math.Abs(pan) < centerBand)
+            // dB 差比线性声道差更接近人耳对响度差的感知。
+            if (absDiffDb <= centerThresholdDb)
             {
                 if (isFrontCue)
                 {
@@ -169,40 +177,40 @@ namespace DeafAlsoPlayFps.ViewModel
                     _targetDirectionText = $"后 {(totalLevel * 100):F0}%";
                 }
             }
-            else if (pan <= -sideBand)
+            else if (levelDiffDb <= -sideThresholdDb)
             {
                 _targetLeftDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"左 {(Math.Abs(pan) * 100):F0}%";
+                _targetDirectionText = $"左 {absDiffDb:F0}dB";
             }
-            else if (pan < -centerBand)
+            else if (levelDiffDb < -centerThresholdDb)
             {
                 if (isFrontCue)
                 {
                     _targetLeftUpDirectionOpacity = activeOpacity;
-                    _targetDirectionText = $"左上 {(Math.Abs(pan) * 100):F0}%";
+                    _targetDirectionText = $"左上 {absDiffDb:F0}dB";
                 }
                 else
                 {
                     _targetLeftDownDirectionOpacity = activeOpacity;
-                    _targetDirectionText = $"左下 {(Math.Abs(pan) * 100):F0}%";
+                    _targetDirectionText = $"左下 {absDiffDb:F0}dB";
                 }
             }
-            else if (pan >= sideBand)
+            else if (levelDiffDb >= sideThresholdDb)
             {
                 _targetRightDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"右 {(pan * 100):F0}%";
+                _targetDirectionText = $"右 {absDiffDb:F0}dB";
             }
             else
             {
                 if (isFrontCue)
                 {
                     _targetRightUpDirectionOpacity = activeOpacity;
-                    _targetDirectionText = $"右上 {(pan * 100):F0}%";
+                    _targetDirectionText = $"右上 {absDiffDb:F0}dB";
                 }
                 else
                 {
                     _targetRightDownDirectionOpacity = activeOpacity;
-                    _targetDirectionText = $"右下 {(pan * 100):F0}%";
+                    _targetDirectionText = $"右下 {absDiffDb:F0}dB";
                 }
             }
         }

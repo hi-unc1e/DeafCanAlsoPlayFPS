@@ -15,6 +15,11 @@ namespace DeafAlsoPlayFps.Views
             InitializeComponent();
             _viewModel = new ChannelDifferenceViewModel();
             DataContext = _viewModel;
+            var settings = SettingsHelper.Instance?.Settings;
+            if (settings != null)
+            {
+                ApplyDirectionSettings(settings.DirectionRingEnabled, settings.DirectionSideThresholdDb);
+            }
 
             // 设置窗口位置到屏幕顶部中央
             SetWindowPositionTop();
@@ -69,6 +74,13 @@ namespace DeafAlsoPlayFps.Views
         public void UpdateChannelDifference(float leftLevel, float rightLevel)
         {
             _viewModel?.UpdateChannelDifference(leftLevel, rightLevel);
+        }
+        public void ApplyDirectionSettings(bool enabled, double sideThresholdDb)
+        {
+            _viewModel.DirectionRingEnabled = enabled;
+            _viewModel.SideThresholdDb = sideThresholdDb;
+            this.Height = enabled ? 172 : 96;
+            MainContainer.Height = enabled ? 152 : 76;
         }
         public void UpdatePosition(double left, double top)
         {

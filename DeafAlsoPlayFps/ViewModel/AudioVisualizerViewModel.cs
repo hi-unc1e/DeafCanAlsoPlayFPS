@@ -17,6 +17,7 @@ namespace DeafAlsoPlayFps.ViewModel
         public event Action<float, float>? LevelsUpdated;
 
         public event Action<DisplayMode>? DisplayModeChanged;
+        public event Action<bool, double>? DirectionSettingsChanged;
 
         [ObservableProperty]
         private DisplayMode _displayMode = DisplayMode.All;
@@ -56,6 +57,22 @@ namespace DeafAlsoPlayFps.ViewModel
 
         [ObservableProperty]
         private double _gainBoost = 1.0; // 增益提升：1.0 = 正常，> 1.0 = 整体放大
+
+        [ObservableProperty]
+        private bool _directionRingEnabled = true;
+
+        [ObservableProperty]
+        private double _directionSideThresholdDb = 15.0;
+
+        partial void OnDirectionRingEnabledChanged(bool value)
+        {
+            DirectionSettingsChanged?.Invoke(value, DirectionSideThresholdDb);
+        }
+
+        partial void OnDirectionSideThresholdDbChanged(double value)
+        {
+            DirectionSettingsChanged?.Invoke(DirectionRingEnabled, value);
+        }
 
         private double _targetLeftHeight = 0;
         private double _targetRightHeight = 0;

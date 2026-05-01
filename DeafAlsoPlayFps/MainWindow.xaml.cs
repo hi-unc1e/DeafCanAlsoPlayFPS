@@ -279,7 +279,12 @@ namespace DeafAlsoPlayFps
                 _logger.Error("SettingsHelper.Instance or Settings is null, cannot save settings.");
                 return;
             }
-            SettingsHelper.Instance.Settings.AudioSensitivity = _viewModel.GainBoost;
+            SettingsHelper.Instance.Settings.AudioSensitivity = _viewModel.AudioSensitivity;
+            SettingsHelper.Instance.Settings.ChannelSeparation = _viewModel.ChannelSeparation;
+            SettingsHelper.Instance.Settings.GainBoost = _viewModel.GainBoost;
+            SettingsHelper.Instance.Settings.DirectionRingEnabled = _viewModel.DirectionRingEnabled;
+            SettingsHelper.Instance.Settings.DirectionSideThresholdDb = _viewModel.DirectionSideThresholdDb;
+            SettingsHelper.Instance.Settings.DisplayMode = (DisplayMode)_viewModel.SelectedDisplayIndex;
             SettingsHelper.Instance.Settings.MainSwitch = _viewModel.SwitchOn;
             SettingsHelper.Instance.SaveSettings();
             this.Close();
@@ -294,6 +299,8 @@ namespace DeafAlsoPlayFps
                     vm.AudioSensitivity = 1.0;
                     vm.ChannelSeparation = 1.0;
                     vm.GainBoost = 1.0;
+                    vm.DirectionRingEnabled = true;
+                    vm.DirectionSideThresholdDb = 15.0;
                 }
             }
             catch (Exception ex)
