@@ -37,19 +37,19 @@ namespace DeafAlsoPlayFps.ViewModel
 
         // 音频可视化参数 - 直接存储在MainViewModel中
         [ObservableProperty]
-        private double _audioSensitivity = 1.0;
+        private double _audioSensitivity = 2.0;
 
         [ObservableProperty]
-        private double _channelSeparation = 1.0;
+        private double _channelSeparation = 2.0;
 
         [ObservableProperty]
-        private double _gainBoost = 1;
+        private double _gainBoost = 2.0;
 
         [ObservableProperty]
         private bool _directionRingEnabled = true;
 
         [ObservableProperty]
-        private double _directionSideThresholdDb = 15.0;
+        private double _directionSideThresholdDb = 10.0;
 
         [ObservableProperty]
         private int _selectedDisplayIndex;

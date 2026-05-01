@@ -296,11 +296,11 @@ namespace DeafAlsoPlayFps
             {
                 if (DataContext is MainViewModel vm)
                 {
-                    vm.AudioSensitivity = 1.0;
-                    vm.ChannelSeparation = 1.0;
-                    vm.GainBoost = 1.0;
+                    vm.AudioSensitivity = 2.0;
+                    vm.ChannelSeparation = 2.0;
+                    vm.GainBoost = 2.0;
                     vm.DirectionRingEnabled = true;
-                    vm.DirectionSideThresholdDb = 15.0;
+                    vm.DirectionSideThresholdDb = 10.0;
                 }
             }
             catch (Exception ex)

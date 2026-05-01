@@ -137,10 +137,10 @@ namespace DeafAlsoPlayFps
         public Point RightChannelPosition { get; set; }
         public Point TopWindowPosition { get; set; }
 
-        public double AudioSensitivity { get; set; } = 1.0;
-        public double ChannelSeparation { get; set; } = 1.0;
-        public double GainBoost { get; set; } = 1.0;
+        public double AudioSensitivity { get; set; } = 2.0;
+        public double ChannelSeparation { get; set; } = 2.0;
+        public double GainBoost { get; set; } = 2.0;
         public bool DirectionRingEnabled { get; set; } = true;
-        public double DirectionSideThresholdDb { get; set; } = 15.0;
+        public double DirectionSideThresholdDb { get; set; } = 10.0;
     }
 }

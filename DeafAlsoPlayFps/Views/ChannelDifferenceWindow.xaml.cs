@@ -79,8 +79,8 @@ namespace DeafAlsoPlayFps.Views
         {
             _viewModel.DirectionRingEnabled = enabled;
             _viewModel.SideThresholdDb = sideThresholdDb;
-            this.Height = enabled ? 172 : 96;
-            MainContainer.Height = enabled ? 152 : 76;
+            this.Height = enabled ? 176 : 96;
+            MainContainer.Height = enabled ? 156 : 76;
         }
         public void UpdatePosition(double left, double top)
         {

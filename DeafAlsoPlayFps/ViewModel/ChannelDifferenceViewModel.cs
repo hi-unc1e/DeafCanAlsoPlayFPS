@@ -10,8 +10,12 @@ namespace DeafAlsoPlayFps.ViewModel
         private static readonly Logger _logger = LogManager.GetCurrentClassLogger();
         private readonly DispatcherTimer _smoothingTimer;
         private const double MaxBarWidth = 170.0; // 每侧最大宽度
-        private const double SmoothingFactor = 0.7; // 平滑系数
+        private const double BarAttackFactor = 0.45; // 声音出现时快速响应
+        private const double BarDecayFactor = 0.18; // 声音消失后约 300ms 衰减
         private const double CenterPosition = 180.0; // 中心位置
+        private const double CenterThresholdDb = 1.5;
+        private const double AudibleThreshold = 0.003;
+        private static readonly TimeSpan CueHoldDuration = TimeSpan.FromMilliseconds(150);
         [ObservableProperty]
         private double _leftBarWidth = 0;
         
@@ -28,10 +32,13 @@ namespace DeafAlsoPlayFps.ViewModel
         private string _directionText = "等待声音";
 
         [ObservableProperty]
+        private double _centerAlignmentOpacity = 0;
+
+        [ObservableProperty]
         private bool _directionRingEnabled = true;
 
         [ObservableProperty]
-        private double _sideThresholdDb = 15.0;
+        private double _sideThresholdDb = 10.0;
 
         [ObservableProperty]
         private double _frontDirectionOpacity = 0;
@@ -62,6 +69,7 @@ namespace DeafAlsoPlayFps.ViewModel
         private double _targetRightWidth = 0;
         private string _targetDifferenceText = "平衡";
         private string _targetDirectionText = "等待声音";
+        private double _targetCenterAlignmentOpacity = 0;
         private double _targetFrontDirectionOpacity = 0;
         private double _targetBackDirectionOpacity = 0;
         private double _targetLeftDirectionOpacity = 0;
@@ -73,6 +81,7 @@ namespace DeafAlsoPlayFps.ViewModel
 
         private double _levelBaseline = 0.0;
         private double _previousTotalLevel = 0.0;
+        private DateTime _barHoldUntilUtc = DateTime.MinValue;
 
         public ChannelDifferenceViewModel()
         {
@@ -89,42 +98,62 @@ namespace DeafAlsoPlayFps.ViewModel
         {
             try
             {
-                // 计算声道差值 (-1 到 +1，负值表示左声道更强，正值表示右声道更强)
-                float difference = rightLevel - leftLevel;
-                UpdateDirectionCue(leftLevel, rightLevel);
-                
-                // 限制差值范围
-                difference = Math.Max(-1.0f, Math.Min(1.0f, difference));
-                
-                if (Math.Abs(difference) < 0.02f)
+                var now = DateTime.UtcNow;
+                var totalLevel = Math.Max(leftLevel, rightLevel);
+
+                if (totalLevel < AudibleThreshold)
                 {
-                    // 差值很小，显示平衡状态
+                    if (now <= _barHoldUntilUtc)
+                    {
+                        return;
+                    }
+
+                    UpdateDirectionCue(leftLevel, rightLevel);
                     _targetLeftWidth = 0;
                     _targetLeftPosition = CenterPosition;
                     _targetRightWidth = 0;
-                    _targetDifferenceText = "平衡";
+                    _targetCenterAlignmentOpacity = 0;
+                    _targetDifferenceText = "等待声音";
+                    return;
                 }
-                else if (difference < 0)
+
+                UpdateDirectionCue(leftLevel, rightLevel);
+                _barHoldUntilUtc = now + CueHoldDuration;
+
+                var left = Math.Max(leftLevel, AudibleThreshold);
+                var right = Math.Max(rightLevel, AudibleThreshold);
+                var levelDiffDb = 20.0 * Math.Log10(right / left);
+                var absDiffDb = Math.Abs(levelDiffDb);
+                var sideThresholdDb = Math.Max(CenterThresholdDb + 1.0, SideThresholdDb);
+
+                if (absDiffDb <= CenterThresholdDb)
                 {
-                    // 左声道更强
-                    var intensity = Math.Abs(difference);
+                    _targetLeftWidth = 0;
+                    _targetLeftPosition = CenterPosition;
+                    _targetRightWidth = 0;
+                    _targetCenterAlignmentOpacity = 0.85;
+                    _targetDifferenceText = "对准";
+                }
+                else if (levelDiffDb < 0)
+                {
+                    var intensity = GetBarIntensity(absDiffDb, sideThresholdDb);
                     _targetLeftWidth = intensity * MaxBarWidth;
                     _targetLeftPosition = CenterPosition - _targetLeftWidth;
                     _targetRightWidth = 0;
-                    _targetDifferenceText = $"L {(intensity * 100):F0}%";
+                    _targetCenterAlignmentOpacity = 0;
+                    _targetDifferenceText = $"L {absDiffDb:F0}dB";
                 }
                 else
                 {
-                    // 右声道更强
-                    var intensity = difference;
+                    var intensity = GetBarIntensity(absDiffDb, sideThresholdDb);
                     _targetLeftWidth = 0;
                     _targetLeftPosition = CenterPosition;
                     _targetRightWidth = intensity * MaxBarWidth;
-                    _targetDifferenceText = $"R {(intensity * 100):F0}%";
+                    _targetCenterAlignmentOpacity = 0;
+                    _targetDifferenceText = $"R {absDiffDb:F0}dB";
                 }
                 
-                // 调试输出
-                System.Diagnostics.Debug.WriteLine($"声道差值: L={leftLevel:F3}, R={rightLevel:F3}, 差值={difference:F3}, 文本={_targetDifferenceText}");
+                System.Diagnostics.Debug.WriteLine($"声道差值: L={leftLevel:F3}, R={rightLevel:F3}, dB={levelDiffDb:F1}, 文本={_targetDifferenceText}");
             }
             catch (Exception ex)
             {
@@ -132,11 +161,16 @@ namespace DeafAlsoPlayFps.ViewModel
             }
         }
 
+        private static double GetBarIntensity(double absDiffDb, double sideThresholdDb)
+        {
+            var normalized = (absDiffDb - CenterThresholdDb) / (sideThresholdDb - CenterThresholdDb);
+            normalized = Math.Max(0.0, Math.Min(1.0, normalized));
+            return Math.Sqrt(normalized);
+        }
+
         private void UpdateDirectionCue(float leftLevel, float rightLevel)
         {
             const double idleOpacity = 0;
-            const double centerThresholdDb = 1.5;
-            const double audibleThreshold = 0.003;
 
             _targetFrontDirectionOpacity = idleOpacity;
             _targetBackDirectionOpacity = idleOpacity;
@@ -148,23 +182,23 @@ namespace DeafAlsoPlayFps.ViewModel
             _targetRightDownDirectionOpacity = idleOpacity;
 
             var totalLevel = Math.Max(leftLevel, rightLevel);
-            if (totalLevel < audibleThreshold)
+            if (totalLevel < AudibleThreshold)
             {
                 _targetDirectionText = "等待声音";
                 _previousTotalLevel = totalLevel;
                 return;
             }
 
-            var left = Math.Max(leftLevel, audibleThreshold);
-            var right = Math.Max(rightLevel, audibleThreshold);
+            var left = Math.Max(leftLevel, AudibleThreshold);
+            var right = Math.Max(rightLevel, AudibleThreshold);
             var levelDiffDb = 20.0 * Math.Log10(right / left);
             var absDiffDb = Math.Abs(levelDiffDb);
-            var sideThresholdDb = Math.Max(centerThresholdDb + 1.0, SideThresholdDb);
+            var sideThresholdDb = Math.Max(CenterThresholdDb + 1.0, SideThresholdDb);
             var activeOpacity = 0.55 + Math.Min(1.0, totalLevel * 1.8) * 0.35;
             var isFrontCue = IsFrontCue(totalLevel);
 
             // dB 差比线性声道差更接近人耳对响度差的感知。
-            if (absDiffDb <= centerThresholdDb)
+            if (absDiffDb <= CenterThresholdDb)
             {
                 if (isFrontCue)
                 {
@@ -182,7 +216,7 @@ namespace DeafAlsoPlayFps.ViewModel
                 _targetLeftDirectionOpacity = activeOpacity;
                 _targetDirectionText = $"左 {absDiffDb:F0}dB";
             }
-            else if (levelDiffDb < -centerThresholdDb)
+            else if (levelDiffDb < -CenterThresholdDb)
             {
                 if (isFrontCue)
                 {
@@ -241,36 +275,14 @@ namespace DeafAlsoPlayFps.ViewModel
                 var leftPosDiff = _targetLeftPosition - LeftBarPosition;
                 var rightWidthDiff = _targetRightWidth - RightBarWidth;
 
-                if (Math.Abs(leftWidthDiff) > 0.5)
-                {
-                    LeftBarWidth += leftWidthDiff * (1 - SmoothingFactor);
-                }
-                else
-                {
-                    LeftBarWidth = _targetLeftWidth;
-                }
-
-                if (Math.Abs(leftPosDiff) > 0.5)
-                {
-                    LeftBarPosition += leftPosDiff * (1 - SmoothingFactor);
-                }
-                else
-                {
-                    LeftBarPosition = _targetLeftPosition;
-                }
-
-                if (Math.Abs(rightWidthDiff) > 0.5)
-                {
-                    RightBarWidth += rightWidthDiff * (1 - SmoothingFactor);
-                }
-                else
-                {
-                    RightBarWidth = _targetRightWidth;
-                }
+                LeftBarWidth = SmoothBarValue(LeftBarWidth, _targetLeftWidth, leftWidthDiff);
+                LeftBarPosition = SmoothBarValue(LeftBarPosition, _targetLeftPosition, leftPosDiff);
+                RightBarWidth = SmoothBarValue(RightBarWidth, _targetRightWidth, rightWidthDiff);
 
                 // 更新文本（不需要平滑）
                 DifferenceText = _targetDifferenceText;
                 DirectionText = _targetDirectionText;
+                CenterAlignmentOpacity = SmoothOpacity(CenterAlignmentOpacity, _targetCenterAlignmentOpacity);
                 FrontDirectionOpacity = SmoothOpacity(FrontDirectionOpacity, _targetFrontDirectionOpacity);
                 BackDirectionOpacity = SmoothOpacity(BackDirectionOpacity, _targetBackDirectionOpacity);
                 LeftDirectionOpacity = SmoothOpacity(LeftDirectionOpacity, _targetLeftDirectionOpacity);
@@ -290,6 +302,17 @@ namespace DeafAlsoPlayFps.ViewModel
         {
             var diff = target - current;
             return Math.Abs(diff) > 0.01 ? current + diff * 0.25 : target;
+        }
+
+        private static double SmoothBarValue(double current, double target, double diff)
+        {
+            if (Math.Abs(diff) <= 0.5)
+            {
+                return target;
+            }
+
+            var factor = target > current ? BarAttackFactor : BarDecayFactor;
+            return current + diff * factor;
         }
 
         public void Dispose()

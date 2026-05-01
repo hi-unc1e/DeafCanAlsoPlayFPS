@@ -8,7 +8,7 @@
 		<LangVersion>latest</LangVersion>
 		<UseWPF>true</UseWPF>
 		<Product>DeafAlsoPlayFps</Product>
-		<Version>1.0.1</Version>
+		<Version>1.0.2</Version>
 		<ApplicationManifest>app.manifest</ApplicationManifest>
 		<PlatformTarget>x86</PlatformTarget>
 	</PropertyGroup>

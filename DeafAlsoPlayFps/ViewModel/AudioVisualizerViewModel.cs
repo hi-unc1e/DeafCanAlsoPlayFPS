@@ -50,19 +50,19 @@ namespace DeafAlsoPlayFps.ViewModel
 
         // 添加可调节参数
         [ObservableProperty]
-        private double _sensitivity = 1.0; // 灵敏度：1.0 = 正常，> 1.0 = 更敏感
+        private double _sensitivity = 2.0; // 灵敏度：1.0 = 正常，> 1.0 = 更敏感
 
         [ObservableProperty]
-        private double _channelSeparation = 1.0; // 声道分离度：1.0 = 正常，> 1.0 = 放大左右差异
+        private double _channelSeparation = 2.0; // 声道分离度：1.0 = 正常，> 1.0 = 放大左右差异
 
         [ObservableProperty]
-        private double _gainBoost = 1.0; // 增益提升：1.0 = 正常，> 1.0 = 整体放大
+        private double _gainBoost = 2.0; // 增益提升：1.0 = 正常，> 1.0 = 整体放大
 
         [ObservableProperty]
         private bool _directionRingEnabled = true;
 
         [ObservableProperty]
-        private double _directionSideThresholdDb = 15.0;
+        private double _directionSideThresholdDb = 10.0;
 
         partial void OnDirectionRingEnabledChanged(bool value)
         {
