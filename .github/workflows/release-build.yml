@@ -1,0 +1,63 @@
+name: Release Build
+
+on:
+  push:
+    branches:
+      - codex/improve-direction-visuals
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup MSBuild
+        uses: microsoft/setup-msbuild@v2
+
+      - name: Setup NuGet
+        uses: NuGet/setup-nuget@v2
+
+      - name: Restore packages
+        run: nuget restore GameTools.sln
+
+      - name: Build solution
+        run: msbuild GameTools.sln /m /p:Configuration=Release /p:Platform="Any CPU" /p:RestorePackages=false
+
+      - name: Package app
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = "Stop"
+          $publishRoot = Join-Path $env:RUNNER_TEMP "DeafAlsoPlayFps-beta"
+          $source = "DeafAlsoPlayFps/bin/Release/net480"
+          if (-not (Test-Path $source)) {
+            $source = "DeafAlsoPlayFps/bin/Release"
+          }
+          if (-not (Test-Path $source)) {
+            throw "Release output directory was not found."
+          }
+          New-Item -ItemType Directory -Force -Path $publishRoot | Out-Null
+          Copy-Item -Path "$source/*" -Destination $publishRoot -Recurse -Force
+          Compress-Archive -Path "$publishRoot/*" -DestinationPath "DeafAlsoPlayFps-beta.zip" -Force
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: DeafAlsoPlayFps-beta
+          path: DeafAlsoPlayFps-beta.zip
+
+      - name: Create prerelease
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: beta-${{ github.run_number }}
+          name: DeafAlsoPlayFps beta ${{ github.run_number }}
+          body: |
+            Beta build from branch `${{ github.ref_name }}`.
+            Commit: `${{ github.sha }}`.
+          prerelease: true
+          files: DeafAlsoPlayFps-beta.zip
