@@ -28,30 +28,45 @@ namespace DeafAlsoPlayFps.ViewModel
         private string _directionText = "等待声音";
 
         [ObservableProperty]
-        private double _leftDirectionOpacity = 0.18;
+        private double _frontDirectionOpacity = 0;
 
         [ObservableProperty]
-        private double _leftFrontDirectionOpacity = 0.18;
+        private double _backDirectionOpacity = 0;
 
         [ObservableProperty]
-        private double _centerDirectionOpacity = 0.18;
+        private double _leftDirectionOpacity = 0;
 
         [ObservableProperty]
-        private double _rightFrontDirectionOpacity = 0.18;
+        private double _rightDirectionOpacity = 0;
 
         [ObservableProperty]
-        private double _rightDirectionOpacity = 0.18;
+        private double _leftUpDirectionOpacity = 0;
+
+        [ObservableProperty]
+        private double _rightUpDirectionOpacity = 0;
+
+        [ObservableProperty]
+        private double _leftDownDirectionOpacity = 0;
+
+        [ObservableProperty]
+        private double _rightDownDirectionOpacity = 0;
 
         private double _targetLeftWidth = 0;
         private double _targetLeftPosition = CenterPosition;
         private double _targetRightWidth = 0;
         private string _targetDifferenceText = "平衡";
         private string _targetDirectionText = "等待声音";
-        private double _targetLeftDirectionOpacity = 0.18;
-        private double _targetLeftFrontDirectionOpacity = 0.18;
-        private double _targetCenterDirectionOpacity = 0.18;
-        private double _targetRightFrontDirectionOpacity = 0.18;
-        private double _targetRightDirectionOpacity = 0.18;
+        private double _targetFrontDirectionOpacity = 0;
+        private double _targetBackDirectionOpacity = 0;
+        private double _targetLeftDirectionOpacity = 0;
+        private double _targetRightDirectionOpacity = 0;
+        private double _targetLeftUpDirectionOpacity = 0;
+        private double _targetRightUpDirectionOpacity = 0;
+        private double _targetLeftDownDirectionOpacity = 0;
+        private double _targetRightDownDirectionOpacity = 0;
+
+        private double _levelBaseline = 0.0;
+        private double _previousTotalLevel = 0.0;
 
         public ChannelDifferenceViewModel()
         {
@@ -113,54 +128,100 @@ namespace DeafAlsoPlayFps.ViewModel
 
         private void UpdateDirectionCue(float leftLevel, float rightLevel)
         {
-            const double idleOpacity = 0.18;
-            const double frontBand = 0.18;
-            const double sideBand = 0.55;
+            const double idleOpacity = 0;
+            const double centerBand = 0.16;
+            const double sideBand = 0.82;
             const double audibleThreshold = 0.015;
 
+            _targetFrontDirectionOpacity = idleOpacity;
+            _targetBackDirectionOpacity = idleOpacity;
             _targetLeftDirectionOpacity = idleOpacity;
-            _targetLeftFrontDirectionOpacity = idleOpacity;
-            _targetCenterDirectionOpacity = idleOpacity;
-            _targetRightFrontDirectionOpacity = idleOpacity;
             _targetRightDirectionOpacity = idleOpacity;
+            _targetLeftUpDirectionOpacity = idleOpacity;
+            _targetRightUpDirectionOpacity = idleOpacity;
+            _targetLeftDownDirectionOpacity = idleOpacity;
+            _targetRightDownDirectionOpacity = idleOpacity;
 
             var totalLevel = Math.Max(leftLevel, rightLevel);
             if (totalLevel < audibleThreshold)
             {
                 _targetDirectionText = "等待声音";
+                _previousTotalLevel = totalLevel;
                 return;
             }
 
             var sum = Math.Max(leftLevel + rightLevel, audibleThreshold);
             var pan = Math.Max(-1.0, Math.Min(1.0, (rightLevel - leftLevel) / sum));
-            var activeOpacity = 0.42 + Math.Min(1.0, totalLevel * 1.8) * 0.58;
+            var activeOpacity = 0.55 + Math.Min(1.0, totalLevel * 1.8) * 0.35;
+            var isFrontCue = IsFrontCue(totalLevel);
 
-            // 双声道无法可靠区分前后，这里把居中声音明确标为前/后中线。
-            if (Math.Abs(pan) < frontBand)
+            // 纯左/纯右阈值提高，避免左上/左下过早被归入左侧。
+            if (Math.Abs(pan) < centerBand)
             {
-                _targetCenterDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"前/后中线 {(totalLevel * 100):F0}%";
+                if (isFrontCue)
+                {
+                    _targetFrontDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"前 {(totalLevel * 100):F0}%";
+                }
+                else
+                {
+                    _targetBackDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"后 {(totalLevel * 100):F0}%";
+                }
             }
             else if (pan <= -sideBand)
             {
                 _targetLeftDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"左侧 {(Math.Abs(pan) * 100):F0}%";
+                _targetDirectionText = $"左 {(Math.Abs(pan) * 100):F0}%";
             }
-            else if (pan < -frontBand)
+            else if (pan < -centerBand)
             {
-                _targetLeftFrontDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"左前/左后 {(Math.Abs(pan) * 100):F0}%";
+                if (isFrontCue)
+                {
+                    _targetLeftUpDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"左上 {(Math.Abs(pan) * 100):F0}%";
+                }
+                else
+                {
+                    _targetLeftDownDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"左下 {(Math.Abs(pan) * 100):F0}%";
+                }
             }
             else if (pan >= sideBand)
             {
                 _targetRightDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"右侧 {(pan * 100):F0}%";
+                _targetDirectionText = $"右 {(pan * 100):F0}%";
             }
             else
             {
-                _targetRightFrontDirectionOpacity = activeOpacity;
-                _targetDirectionText = $"右前/右后 {(pan * 100):F0}%";
+                if (isFrontCue)
+                {
+                    _targetRightUpDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"右上 {(pan * 100):F0}%";
+                }
+                else
+                {
+                    _targetRightDownDirectionOpacity = activeOpacity;
+                    _targetDirectionText = $"右下 {(pan * 100):F0}%";
+                }
             }
+        }
+
+        private bool IsFrontCue(double totalLevel)
+        {
+            if (_levelBaseline <= 0)
+            {
+                _levelBaseline = totalLevel;
+                _previousTotalLevel = totalLevel;
+                return true;
+            }
+
+            var rising = totalLevel - _previousTotalLevel;
+            var strongerThanBaseline = totalLevel >= _levelBaseline * 0.92;
+            _levelBaseline = _levelBaseline * 0.94 + totalLevel * 0.06;
+            _previousTotalLevel = totalLevel;
+
+            return rising >= -0.004 && strongerThanBaseline;
         }
 
         private void SmoothingTimer_Tick(object sender, EventArgs e)
@@ -202,11 +263,14 @@ namespace DeafAlsoPlayFps.ViewModel
                 // 更新文本（不需要平滑）
                 DifferenceText = _targetDifferenceText;
                 DirectionText = _targetDirectionText;
+                FrontDirectionOpacity = SmoothOpacity(FrontDirectionOpacity, _targetFrontDirectionOpacity);
+                BackDirectionOpacity = SmoothOpacity(BackDirectionOpacity, _targetBackDirectionOpacity);
                 LeftDirectionOpacity = SmoothOpacity(LeftDirectionOpacity, _targetLeftDirectionOpacity);
-                LeftFrontDirectionOpacity = SmoothOpacity(LeftFrontDirectionOpacity, _targetLeftFrontDirectionOpacity);
-                CenterDirectionOpacity = SmoothOpacity(CenterDirectionOpacity, _targetCenterDirectionOpacity);
-                RightFrontDirectionOpacity = SmoothOpacity(RightFrontDirectionOpacity, _targetRightFrontDirectionOpacity);
                 RightDirectionOpacity = SmoothOpacity(RightDirectionOpacity, _targetRightDirectionOpacity);
+                LeftUpDirectionOpacity = SmoothOpacity(LeftUpDirectionOpacity, _targetLeftUpDirectionOpacity);
+                RightUpDirectionOpacity = SmoothOpacity(RightUpDirectionOpacity, _targetRightUpDirectionOpacity);
+                LeftDownDirectionOpacity = SmoothOpacity(LeftDownDirectionOpacity, _targetLeftDownDirectionOpacity);
+                RightDownDirectionOpacity = SmoothOpacity(RightDownDirectionOpacity, _targetRightDownDirectionOpacity);
             }
             catch (Exception ex)
             {

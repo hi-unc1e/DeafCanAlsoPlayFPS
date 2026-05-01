@@ -26,7 +26,7 @@
             <Border
                 x:Name="MainContainer"
                 Width="380"
-                Height="76"
+                Height="152"
                 HorizontalAlignment="Center"
                 VerticalAlignment="Top"
                 Background="#20000000"
@@ -41,93 +41,21 @@
                 <Grid Margin="10">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
-                        <RowDefinition Height="24" />
-                        <RowDefinition Height="*" />
+                        <RowDefinition Height="22" />
+                        <RowDefinition Height="88" />
                     </Grid.RowDefinitions>
 
                     <!--  标题  -->
                     <TextBlock
                         Grid.Row="0"
-                        Margin="0,0,0,3"
+                        Margin="0,0,0,4"
                         HorizontalAlignment="Center"
                         FontSize="10"
                         Foreground="White"
-                        Text="前/后中线 68%" />
-
-                    <!--  方向提示预览  -->
-                    <UniformGrid
-                        Grid.Row="1"
-                        Margin="0,0,0,4"
-                        Columns="5">
-                        <Border
-                            Margin="2,0"
-                            Background="#B0FF4444"
-                            CornerRadius="8"
-                            Opacity="0.22">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="9"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="左" />
-                        </Border>
-                        <Border
-                            Margin="2,0"
-                            Background="#A0FF7A22"
-                            CornerRadius="8"
-                            Opacity="0.78">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="9"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="左前" />
-                        </Border>
-                        <Border
-                            Margin="2,0"
-                            Background="#A0FFD24A"
-                            CornerRadius="8"
-                            Opacity="0.42">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="9"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="前/后" />
-                        </Border>
-                        <Border
-                            Margin="2,0"
-                            Background="#A044D27A"
-                            CornerRadius="8"
-                            Opacity="0.22">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="9"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="右前" />
-                        </Border>
-                        <Border
-                            Margin="2,0"
-                            Background="#B044FF44"
-                            CornerRadius="8"
-                            Opacity="0.22">
-                            <TextBlock
-                                HorizontalAlignment="Center"
-                                VerticalAlignment="Center"
-                                FontSize="9"
-                                FontWeight="Bold"
-                                Foreground="White"
-                                Text="右" />
-                        </Border>
-                    </UniformGrid>
+                        Text="声源方向" />
 
                     <!--  差值显示区域  -->
-                    <Grid Grid.Row="2">
+                    <Grid Grid.Row="1">
                         <!--  背景轨道  -->
                         <Border
                             Height="20"
@@ -225,6 +153,50 @@
                                 Foreground="#44FF44"
                                 Text="R" />
                         </Grid>
+                    </Grid>
+
+                    <!--  时钟式八方向圆环预览  -->
+                    <Grid
+                        Grid.Row="2"
+                        Margin="0,6,0,0"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center">
+                        <Viewbox Width="82" Height="82">
+                            <Grid Width="100" Height="100">
+                                <Grid.Resources>
+                                    <Style x:Key="BaseSectorStyle" TargetType="Path">
+                                        <Setter Property="Fill" Value="#667A7A7A" />
+                                        <Setter Property="Stroke" Value="#33000000" />
+                                        <Setter Property="StrokeThickness" Value="1.2" />
+                                    </Style>
+                                    <Style x:Key="ActiveSectorStyle" TargetType="Path">
+                                        <Setter Property="Fill" Value="#CCFFD84A" />
+                                        <Setter Property="Stroke" Value="#88FFF2A0" />
+                                        <Setter Property="StrokeThickness" Value="1.4" />
+                                    </Style>
+                                </Grid.Resources>
+
+                                <Path Data="M 31.63,5.65 A 48,48 0 0 1 68.37,5.65 L 59.57,26.9 A 25,25 0 0 0 40.43,26.9 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 68.37,5.65 A 48,48 0 0 1 94.35,31.63 L 73.1,40.43 A 25,25 0 0 0 59.57,26.9 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 94.35,31.63 A 48,48 0 0 1 94.35,68.37 L 73.1,59.57 A 25,25 0 0 0 73.1,40.43 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 94.35,68.37 A 48,48 0 0 1 68.37,94.35 L 59.57,73.1 A 25,25 0 0 0 73.1,59.57 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 68.37,94.35 A 48,48 0 0 1 31.63,94.35 L 40.43,73.1 A 25,25 0 0 0 59.57,73.1 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 31.63,94.35 A 48,48 0 0 1 5.65,68.37 L 26.9,59.57 A 25,25 0 0 0 40.43,73.1 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 5.65,68.37 A 48,48 0 0 1 5.65,31.63 L 26.9,40.43 A 25,25 0 0 0 26.9,59.57 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 5.65,31.63 A 48,48 0 0 1 31.63,5.65 L 40.43,26.9 A 25,25 0 0 0 26.9,40.43 Z" Style="{StaticResource BaseSectorStyle}" />
+                                <Path Data="M 5.65,31.63 A 48,48 0 0 1 31.63,5.65 L 40.43,26.9 A 25,25 0 0 0 26.9,40.43 Z" Opacity="0.86" Style="{StaticResource ActiveSectorStyle}" />
+                            </Grid>
+                        </Viewbox>
+
+                        <TextBlock
+                            Width="42"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="#E6FFFFFF"
+                            Text="左上"
+                            TextAlignment="Center" />
                     </Grid>
                 </Grid>
             </Border>
