@@ -104,6 +104,9 @@ namespace DeafAlsoPlayFps.Services
         {
             leftLevel = 0f;
             rightLevel = 0f;
+            double leftSumSquares = 0;
+            double rightSumSquares = 0;
+            int frameCount = 0;
 
             // IEEE Float 32位 = 4字节每样本
             for (int i = 0; i < bytesRecorded; i += 4 * channels)
@@ -113,8 +116,7 @@ namespace DeafAlsoPlayFps.Services
                 {
                     // 将4个字节转换为IEEE Float
                     float leftSample = BitConverter.ToSingle(buffer, i);
-                    float leftValue = Math.Abs(leftSample);
-                    leftLevel = Math.Max(leftLevel, leftValue);
+                    leftSumSquares += leftSample * leftSample;
                 }
 
                 // 处理右声道
@@ -122,22 +124,28 @@ namespace DeafAlsoPlayFps.Services
                 {
                     // 立体声：处理独立的右声道
                     float rightSample = BitConverter.ToSingle(buffer, i + 4);
-                    float rightValue = Math.Abs(rightSample);
-                    rightLevel = Math.Max(rightLevel, rightValue);
+                    rightSumSquares += rightSample * rightSample;
                 }
+
+                frameCount++;
             }
 
             // 如果是单声道，右声道使用左声道的值
             if (channels == 1)
             {
-                rightLevel = leftLevel;
+                rightSumSquares = leftSumSquares;
             }
+
+            ConvertRmsToLevels(leftSumSquares, rightSumSquares, frameCount, out leftLevel, out rightLevel);
         }
 
         private void ProcessInt16Samples(byte[] buffer, int bytesRecorded, int channels, out float leftLevel, out float rightLevel)
         {
             leftLevel = 0f;
             rightLevel = 0f;
+            double leftSumSquares = 0;
+            double rightSumSquares = 0;
+            int frameCount = 0;
 
             for (int i = 0; i < bytesRecorded; i += 2 * channels)
             {
@@ -145,8 +153,8 @@ namespace DeafAlsoPlayFps.Services
                 if (i + 1 < bytesRecorded)
                 {
                     short leftSample = (short)(buffer[i] | (buffer[i + 1] << 8));
-                    float leftValue = Math.Abs(leftSample) / 32768f;
-                    leftLevel = Math.Max(leftLevel, leftValue);
+                    double leftValue = leftSample / 32768.0;
+                    leftSumSquares += leftValue * leftValue;
                 }
 
                 // 处理右声道
@@ -154,22 +162,29 @@ namespace DeafAlsoPlayFps.Services
                 {
                     // 立体声：处理独立的右声道
                     short rightSample = (short)(buffer[i + 2] | (buffer[i + 3] << 8));
-                    float rightValue = Math.Abs(rightSample) / 32768f;
-                    rightLevel = Math.Max(rightLevel, rightValue);
+                    double rightValue = rightSample / 32768.0;
+                    rightSumSquares += rightValue * rightValue;
                 }
+
+                frameCount++;
             }
 
             // 如果是单声道，右声道使用左声道的值
             if (channels == 1)
             {
-                rightLevel = leftLevel;
+                rightSumSquares = leftSumSquares;
             }
+
+            ConvertRmsToLevels(leftSumSquares, rightSumSquares, frameCount, out leftLevel, out rightLevel);
         }
 
         private void ProcessInt32Samples(byte[] buffer, int bytesRecorded, int channels, out float leftLevel, out float rightLevel)
         {
             leftLevel = 0f;
             rightLevel = 0f;
+            double leftSumSquares = 0;
+            double rightSumSquares = 0;
+            int frameCount = 0;
 
             for (int i = 0; i < bytesRecorded; i += 4 * channels)
             {
@@ -177,8 +192,8 @@ namespace DeafAlsoPlayFps.Services
                 if (i + 3 < bytesRecorded)
                 {
                     int leftSample = buffer[i] | (buffer[i + 1] << 8) | (buffer[i + 2] << 16) | (buffer[i + 3] << 24);
-                    float leftValue = Math.Abs(leftSample) / 2147483648f;
-                    leftLevel = Math.Max(leftLevel, leftValue);
+                    double leftValue = leftSample / 2147483648.0;
+                    leftSumSquares += leftValue * leftValue;
                 }
 
                 // 处理右声道
@@ -186,16 +201,35 @@ namespace DeafAlsoPlayFps.Services
                 {
                     // 立体声：处理独立的右声道
                     int rightSample = buffer[i + 4] | (buffer[i + 5] << 8) | (buffer[i + 6] << 16) | (buffer[i + 7] << 24);
-                    float rightValue = Math.Abs(rightSample) / 2147483648f;
-                    rightLevel = Math.Max(rightLevel, rightValue);
+                    double rightValue = rightSample / 2147483648.0;
+                    rightSumSquares += rightValue * rightValue;
                 }
+
+                frameCount++;
             }
 
             // 如果是单声道，右声道使用左声道的值
             if (channels == 1)
             {
-                rightLevel = leftLevel;
+                rightSumSquares = leftSumSquares;
             }
+
+            ConvertRmsToLevels(leftSumSquares, rightSumSquares, frameCount, out leftLevel, out rightLevel);
+        }
+
+        private static void ConvertRmsToLevels(double leftSumSquares, double rightSumSquares, int frameCount, out float leftLevel, out float rightLevel)
+        {
+            if (frameCount <= 0)
+            {
+                leftLevel = 0f;
+                rightLevel = 0f;
+                return;
+            }
+
+            // RMS 更适合方向判断；峰值容易被枪声、环境声或混响同时拉高两侧。
+            const double rmsDisplayGain = 2.0;
+            leftLevel = (float)Math.Min(1.0, Math.Sqrt(leftSumSquares / frameCount) * rmsDisplayGain);
+            rightLevel = (float)Math.Min(1.0, Math.Sqrt(rightSumSquares / frameCount) * rmsDisplayGain);
         }
 
         private void OnRecordingStopped(object? sender, StoppedEventArgs e)

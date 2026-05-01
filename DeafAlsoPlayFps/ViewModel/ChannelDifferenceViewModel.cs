@@ -135,8 +135,8 @@ namespace DeafAlsoPlayFps.ViewModel
         private void UpdateDirectionCue(float leftLevel, float rightLevel)
         {
             const double idleOpacity = 0;
-            const double centerThresholdDb = 3.0;
-            const double audibleThreshold = 0.015;
+            const double centerThresholdDb = 1.5;
+            const double audibleThreshold = 0.003;
 
             _targetFrontDirectionOpacity = idleOpacity;
             _targetBackDirectionOpacity = idleOpacity;

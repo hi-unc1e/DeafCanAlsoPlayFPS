@@ -6,6 +6,7 @@ on:
       - codex/improve-direction-visuals
     tags:
       - "1.0.0"
+      - "1.0.1"
   workflow_dispatch:
 
 permissions:
