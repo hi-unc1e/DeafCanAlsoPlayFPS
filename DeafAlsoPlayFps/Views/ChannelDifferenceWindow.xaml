@@ -4,7 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     Title="声道差值显示"
     Width="400"
-    Height="80"
+    Height="96"
     AllowsTransparency="True"
     Background="Transparent"
     ResizeMode="NoResize"
@@ -18,7 +18,7 @@
         <Border
             x:Name="MainContainer"
             Width="380"
-            Height="60"
+            Height="76"
             HorizontalAlignment="Center"
             VerticalAlignment="Center"
             Background="#20000000"
@@ -29,20 +29,93 @@
             <Grid Margin="10">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
+                    <RowDefinition Height="24" />
                     <RowDefinition Height="*" />
                 </Grid.RowDefinitions>
 
                 <!--  标题  -->
                 <TextBlock
                     Grid.Row="0"
-                    Margin="0,2,0,4"
+                    Margin="0,0,0,3"
                     HorizontalAlignment="Center"
                     FontSize="10"
                     Foreground="White"
-                    Text="声道平衡" />
+                    Text="{Binding DirectionText}" />
+
+                <!--  方向提示：基于双声道近似，居中时表示前/后中线  -->
+                <UniformGrid
+                    Grid.Row="1"
+                    Margin="0,0,0,4"
+                    Columns="5">
+                    <Border
+                        Margin="2,0"
+                        Background="#B0FF4444"
+                        CornerRadius="8"
+                        Opacity="{Binding LeftDirectionOpacity}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="左" />
+                    </Border>
+                    <Border
+                        Margin="2,0"
+                        Background="#A0FF7A22"
+                        CornerRadius="8"
+                        Opacity="{Binding LeftFrontDirectionOpacity}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="左前" />
+                    </Border>
+                    <Border
+                        Margin="2,0"
+                        Background="#A0FFD24A"
+                        CornerRadius="8"
+                        Opacity="{Binding CenterDirectionOpacity}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="前/后" />
+                    </Border>
+                    <Border
+                        Margin="2,0"
+                        Background="#A044D27A"
+                        CornerRadius="8"
+                        Opacity="{Binding RightFrontDirectionOpacity}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="右前" />
+                    </Border>
+                    <Border
+                        Margin="2,0"
+                        Background="#B044FF44"
+                        CornerRadius="8"
+                        Opacity="{Binding RightDirectionOpacity}">
+                        <TextBlock
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            FontSize="9"
+                            FontWeight="Bold"
+                            Foreground="White"
+                            Text="右" />
+                    </Border>
+                </UniformGrid>
 
                 <!--  差值显示区域  -->
-                <Grid Grid.Row="1">
+                <Grid Grid.Row="2">
                     <!--  背景轨道  -->
                     <Border
                         Height="20"
@@ -145,4 +218,3 @@
         </Border>
     </Grid>
 </Window>
-

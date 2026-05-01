@@ -24,10 +24,34 @@ namespace DeafAlsoPlayFps.ViewModel
         [ObservableProperty]
         private string _differenceText = "平衡";
 
+        [ObservableProperty]
+        private string _directionText = "等待声音";
+
+        [ObservableProperty]
+        private double _leftDirectionOpacity = 0.18;
+
+        [ObservableProperty]
+        private double _leftFrontDirectionOpacity = 0.18;
+
+        [ObservableProperty]
+        private double _centerDirectionOpacity = 0.18;
+
+        [ObservableProperty]
+        private double _rightFrontDirectionOpacity = 0.18;
+
+        [ObservableProperty]
+        private double _rightDirectionOpacity = 0.18;
+
         private double _targetLeftWidth = 0;
         private double _targetLeftPosition = CenterPosition;
         private double _targetRightWidth = 0;
         private string _targetDifferenceText = "平衡";
+        private string _targetDirectionText = "等待声音";
+        private double _targetLeftDirectionOpacity = 0.18;
+        private double _targetLeftFrontDirectionOpacity = 0.18;
+        private double _targetCenterDirectionOpacity = 0.18;
+        private double _targetRightFrontDirectionOpacity = 0.18;
+        private double _targetRightDirectionOpacity = 0.18;
 
         public ChannelDifferenceViewModel()
         {
@@ -46,6 +70,7 @@ namespace DeafAlsoPlayFps.ViewModel
             {
                 // 计算声道差值 (-1 到 +1，负值表示左声道更强，正值表示右声道更强)
                 float difference = rightLevel - leftLevel;
+                UpdateDirectionCue(leftLevel, rightLevel);
                 
                 // 限制差值范围
                 difference = Math.Max(-1.0f, Math.Min(1.0f, difference));
@@ -83,6 +108,58 @@ namespace DeafAlsoPlayFps.ViewModel
             catch (Exception ex)
             {
                 _logger.Error(ex, "更新声道差值失败");
+            }
+        }
+
+        private void UpdateDirectionCue(float leftLevel, float rightLevel)
+        {
+            const double idleOpacity = 0.18;
+            const double frontBand = 0.18;
+            const double sideBand = 0.55;
+            const double audibleThreshold = 0.015;
+
+            _targetLeftDirectionOpacity = idleOpacity;
+            _targetLeftFrontDirectionOpacity = idleOpacity;
+            _targetCenterDirectionOpacity = idleOpacity;
+            _targetRightFrontDirectionOpacity = idleOpacity;
+            _targetRightDirectionOpacity = idleOpacity;
+
+            var totalLevel = Math.Max(leftLevel, rightLevel);
+            if (totalLevel < audibleThreshold)
+            {
+                _targetDirectionText = "等待声音";
+                return;
+            }
+
+            var sum = Math.Max(leftLevel + rightLevel, audibleThreshold);
+            var pan = Math.Max(-1.0, Math.Min(1.0, (rightLevel - leftLevel) / sum));
+            var activeOpacity = 0.42 + Math.Min(1.0, totalLevel * 1.8) * 0.58;
+
+            // 双声道无法可靠区分前后，这里把居中声音明确标为前/后中线。
+            if (Math.Abs(pan) < frontBand)
+            {
+                _targetCenterDirectionOpacity = activeOpacity;
+                _targetDirectionText = $"前/后中线 {(totalLevel * 100):F0}%";
+            }
+            else if (pan <= -sideBand)
+            {
+                _targetLeftDirectionOpacity = activeOpacity;
+                _targetDirectionText = $"左侧 {(Math.Abs(pan) * 100):F0}%";
+            }
+            else if (pan < -frontBand)
+            {
+                _targetLeftFrontDirectionOpacity = activeOpacity;
+                _targetDirectionText = $"左前/左后 {(Math.Abs(pan) * 100):F0}%";
+            }
+            else if (pan >= sideBand)
+            {
+                _targetRightDirectionOpacity = activeOpacity;
+                _targetDirectionText = $"右侧 {(pan * 100):F0}%";
+            }
+            else
+            {
+                _targetRightFrontDirectionOpacity = activeOpacity;
+                _targetDirectionText = $"右前/右后 {(pan * 100):F0}%";
             }
         }
 
@@ -124,11 +201,23 @@ namespace DeafAlsoPlayFps.ViewModel
 
                 // 更新文本（不需要平滑）
                 DifferenceText = _targetDifferenceText;
+                DirectionText = _targetDirectionText;
+                LeftDirectionOpacity = SmoothOpacity(LeftDirectionOpacity, _targetLeftDirectionOpacity);
+                LeftFrontDirectionOpacity = SmoothOpacity(LeftFrontDirectionOpacity, _targetLeftFrontDirectionOpacity);
+                CenterDirectionOpacity = SmoothOpacity(CenterDirectionOpacity, _targetCenterDirectionOpacity);
+                RightFrontDirectionOpacity = SmoothOpacity(RightFrontDirectionOpacity, _targetRightFrontDirectionOpacity);
+                RightDirectionOpacity = SmoothOpacity(RightDirectionOpacity, _targetRightDirectionOpacity);
             }
             catch (Exception ex)
             {
                 _logger.Error(ex, "声道差值平滑动画处理失败");
             }
+        }
+
+        private static double SmoothOpacity(double current, double target)
+        {
+            var diff = target - current;
+            return Math.Abs(diff) > 0.01 ? current + diff * 0.25 : target;
         }
 
         public void Dispose()
