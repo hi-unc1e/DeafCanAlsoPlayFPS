@@ -92,5 +92,6 @@ Direction Ring: enabled
 ## 发布计划
 
 - 分支继续使用 `codex/improve-direction-visuals`。
-- 完成后发布 `1.0.2` 修复/优化版本。
+- 已发布稳定线为 `1.0.x`。
+- 红绿转向条 2.0 属于功能级增强，完成后发布 `1.1.0` 版本。
 - Release 产物继续使用 GitHub Actions 生成。
